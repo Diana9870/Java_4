@@ -1,9 +1,12 @@
-.gradle
-build
-.idea
+.gradle/
+build/
+out/
+
+.idea/
 *.iml
 
-out
+*.mv.db
+*.trace.db
 
-.spacetravel.mv.db
-.spacetravel.trace.db
+.DS_Store
+Thumbs.db
