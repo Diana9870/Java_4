@@ -9,61 +9,88 @@ import java.util.List;
 
 public class ClientCrudService {
 
-    public Client create(String name) {
-
-        Client client = new Client(name);
+    public Client create(Client client) {
+        validateClient(client);
 
         try (Session session = HibernateUtil.getInstance().openSession()) {
-
-            Transaction tx = session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
 
             session.persist(client);
 
-            tx.commit();
+            transaction.commit();
+            return client;
         }
-
-        return client;
     }
 
     public Client getById(Long id) {
-
         try (Session session = HibernateUtil.getInstance().openSession()) {
             return session.get(Client.class, id);
         }
     }
 
     public List<Client> getAll() {
-
         try (Session session = HibernateUtil.getInstance().openSession()) {
             return session.createQuery("from Client", Client.class).list();
         }
     }
 
-    public void update(Client client) {
+    public Client update(Client client) {
+        if (client == null || client.getId() == null) {
+            throw new IllegalArgumentException("Client ID cannot be null");
+        }
+
+        validateClient(client);
 
         try (Session session = HibernateUtil.getInstance().openSession()) {
+            Transaction transaction = session.beginTransaction();
 
-            Transaction tx = session.beginTransaction();
+            Client existingClient = session.get(Client.class, client.getId());
 
-            session.merge(client);
+            if (existingClient == null) {
+                throw new IllegalArgumentException("Client not found");
+            }
 
-            tx.commit();
+            existingClient.setName(client.getName());
+
+            session.merge(existingClient);
+
+            transaction.commit();
+
+            return existingClient;
         }
     }
 
     public void deleteById(Long id) {
-
         try (Session session = HibernateUtil.getInstance().openSession()) {
-
-            Transaction tx = session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
 
             Client client = session.get(Client.class, id);
 
-            if (client != null) {
-                session.remove(client);
+            if (client == null) {
+                throw new IllegalArgumentException("Client not found");
             }
 
-            tx.commit();
+            session.remove(client);
+
+            transaction.commit();
+        }
+    }
+
+    private void validateClient(Client client) {
+        if (client == null) {
+            throw new IllegalArgumentException("Client cannot be null");
+        }
+
+        String name = client.getName();
+
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Client name cannot be empty");
+        }
+
+        if (name.length() < 3 || name.length() > 200) {
+            throw new IllegalArgumentException(
+                    "Client name must be between 3 and 200 characters"
+            );
         }
     }
 }
